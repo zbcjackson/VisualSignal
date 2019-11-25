@@ -114,23 +114,42 @@ class ViewController: UIViewController, ARSCNViewDelegate {
     }
     
     func wifiStrength() -> Double {
-        let app = UIApplication.shared
-        let subviews = ((app.value(forKey: "statusBar") as! NSObject).value(forKey: "foregroundView") as! UIView).subviews
-        var dataNetworkItemView: UIView?
-        
-        for subview in subviews {
-            if subview.isKind(of: NSClassFromString("UIStatusBarDataNetworkItemView")!) {
-                dataNetworkItemView = subview
-                break
-            }
-        }
-    
-        let dBm = (dataNetworkItemView!.value(forKey: "wifiStrengthRaw") as! NSNumber).intValue
+        let statusBarManager = view.window?.windowScene?.statusBarManager
+        let localStatusBar = statusBarManager?.perform(Selector(("createLocalStatusBar")))?.takeUnretainedValue() as? UIView
+        let statusBar = localStatusBar?.perform(Selector(("statusBar")))?.takeUnretainedValue() as? UIView
+        let _statusBar = statusBar?.value(forKey: "_statusBar") as? UIView
+        let currentData = _statusBar?.value(forKey: "currentData") as? NSObject
+        let wifiEntry = currentData?.value(forKey: "wifiEntry") as? NSObject
+        let numberOfWifiBars = wifiEntry?.value(forKey: "displayValue") as? Int
+        let wifiStrength = wifiEntry?.value(forKey: "displayRawValue") as? Int
+        print("Wifi Bars: ", numberOfWifiBars ?? "no bars", "Raw Value: ", wifiStrength ?? "no raw value")
+        let barToDbm = [0: -90, 1: -70, 2: -50, 3: -30]
+        let dBm = barToDbm[numberOfWifiBars ?? 0] ?? -90
+
+//        let dBm = -90
         var strength = (Double(dBm) + 90.0) / 60.0
         if strength > 1 {
             strength = 1
         }
         return strength
+
+//        let app = UIApplication.shared
+//        let subviews = ((app.value(forKey: "statusBar") as! NSObject).value(forKey: "foregroundView") as! UIView).subviews
+//        var dataNetworkItemView: UIView?
+//
+//        for subview in subviews {
+//            if subview.isKind(of: NSClassFromString("UIStatusBarDataNetworkItemView")!) {
+//                dataNetworkItemView = subview
+//                break
+//            }
+//        }
+//
+//        let dBm = (dataNetworkItemView!.value(forKey: "wifiStrengthRaw") as! NSNumber).intValue
+//        var strength = (Double(dBm) + 90.0) / 60.0
+//        if strength > 1 {
+//            strength = 1
+//        }
+//        return strength
     }
 
     // MARK: - ARSCNViewDelegate
