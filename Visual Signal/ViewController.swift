@@ -63,17 +63,32 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         timer.invalidate()
     }
     
+    
+    
+    fileprivate func getColor(_ strength: Double) -> UIColor {
+        let max:CGFloat = 90.0
+        let one:CGFloat = (255+255)/60.0
+        let val:CGFloat = max * CGFloat(strength)
+        var red:CGFloat = 0, green:CGFloat = 0, blue:CGFloat = 0
+        if(val < 30){
+            red = 1.0
+        }else if (val>=30 && val < 60){
+            red = 1.0
+            green = (255 - (val - 30) * one) / 255
+        }
+        else{
+            red = one * val / 255
+            green = 1.0
+        }
+        
+        return UIColor(displayP3Red: red, green: green, blue: blue, alpha: 1)
+    }
+    
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         let strength = wifiStrength()
         let sphere = SCNSphere(radius: 0.01)
-        sphere.firstMaterial?.diffuse.contents = UIColor(
-            hue: CGFloat((2 * strength - strength * strength) / 2),
-            saturation: 1, brightness: 1, alpha: 1
-        )
-        currentLabelNode = TextNode(text: String(format: "%.02f%%", strength * 100), font: "AvenirNext-Regular", colour: UIColor(
-            hue: CGFloat((2 * strength - strength * strength) / 2),
-            saturation: 1, brightness: 1, alpha: 1
-        ))
+        sphere.firstMaterial?.diffuse.contents = getColor(strength)
+        currentLabelNode = TextNode(text: String(format: "%.02f%%", strength * 100), font: "AvenirNext-Regular", colour: getColor(strength))
         
         currentNode = SCNNode(geometry: sphere)
         updatePositionAndOrientationOf(currentNode!, withPosition: SCNVector3(0, 0, -0.15), relativeTo: sceneView.pointOfView!)
@@ -119,14 +134,20 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         let statusBar = localStatusBar?.perform(Selector(("statusBar")))?.takeUnretainedValue() as? UIView
         let _statusBar = statusBar?.value(forKey: "_statusBar") as? UIView
         let currentData = _statusBar?.value(forKey: "currentData") as? NSObject
-        let wifiEntry = currentData?.value(forKey: "wifiEntry") as? NSObject
-        let numberOfWifiBars = wifiEntry?.value(forKey: "displayValue") as? Int
-        let wifiStrength = wifiEntry?.value(forKey: "displayRawValue") as? Int
-        print("Wifi Bars: ", numberOfWifiBars ?? "no bars", "Raw Value: ", wifiStrength ?? "no raw value")
-        let barToDbm = [0: -90, 1: -70, 2: -50, 3: -30]
-        let dBm = barToDbm[numberOfWifiBars ?? 0] ?? -90
 
-//        let dBm = -90
+        // Cellular signal
+        let cellularEntry = currentData?.value(forKey: "cellularEntry") as? NSObject
+        let signalBars = cellularEntry?.value(forKey: "displayValue") as? Int
+        let barToDbm = [0: -90, 1: -75, 2: -60, 3:-45, 4: -30]
+
+
+        //Wifi Signal
+//        let wifiEntry = currentData?.value(forKey: "wifiEntry") as? NSObject
+//        let signalBars = wifiEntry?.value(forKey: "displayValue") as? Int
+//        let barToDbm = [0: -90, 1: -70, 2: -50, 3: -30]
+
+        let dBm = barToDbm[signalBars ?? 0] ?? -90
+
         var strength = (Double(dBm) + 90.0) / 60.0
         if strength > 1 {
             strength = 1
